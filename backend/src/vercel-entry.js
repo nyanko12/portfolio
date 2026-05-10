@@ -20,6 +20,6 @@ module.exports = async (req, res) => {
     return app(req, res);
   } catch (err) {
     console.error('DB接続エラー:', err.message);
-    res.status(500).json({ message: 'DB接続エラー', detail: err.message });
+    res.status(500).json({ message: 'サーバーエラーが発生しました' });
   }
 };
