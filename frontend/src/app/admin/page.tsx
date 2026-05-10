@@ -47,6 +47,20 @@ export default function AdminPage() {
           <h2 className="font-semibold text-gray-900 mb-1">制作物一覧</h2>
           <p className="text-sm text-gray-500">制作物の編集・削除</p>
         </Link>
+        <Link
+          href="/admin/skills/new"
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-400 transition-colors"
+        >
+          <h2 className="font-semibold text-gray-900 mb-1">スキル登録</h2>
+          <p className="text-sm text-gray-500">新しいスキルを追加する</p>
+        </Link>
+        <Link
+          href="/admin/skills"
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-400 transition-colors"
+        >
+          <h2 className="font-semibold text-gray-900 mb-1">スキル管理</h2>
+          <p className="text-sm text-gray-500">スキルの編集・削除</p>
+        </Link>
       </div>
     </div>
   );

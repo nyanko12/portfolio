@@ -1,4 +1,4 @@
-import type { Log, LogInput, Work, WorkInput } from '@/types';
+import type { Log, LogInput, Work, WorkInput, Skill, SkillInput } from '@/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -97,6 +97,44 @@ export async function updateWork(id: string, input: Partial<WorkInput>): Promise
 
 export async function deleteWork(id: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/works/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  await handleResponse<unknown>(res);
+}
+
+// --- スキル ---
+
+export async function getSkills(): Promise<Skill[]> {
+  const res = await fetch(`${BASE_URL}/skills`);
+  return handleResponse<Skill[]>(res);
+}
+
+export async function getSkill(id: string): Promise<Skill> {
+  const res = await fetch(`${BASE_URL}/skills/${id}`);
+  return handleResponse<Skill>(res);
+}
+
+export async function createSkill(input: SkillInput): Promise<Skill> {
+  const res = await fetch(`${BASE_URL}/skills`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  });
+  return handleResponse<Skill>(res);
+}
+
+export async function updateSkill(id: string, input: Partial<SkillInput>): Promise<Skill> {
+  const res = await fetch(`${BASE_URL}/skills/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  });
+  return handleResponse<Skill>(res);
+}
+
+export async function deleteSkill(id: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/skills/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });

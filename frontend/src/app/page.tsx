@@ -1,19 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getWorks, getGitHubRepos } from '@/lib/api';
-import type { Work } from '@/types';
+import { getWorks, getGitHubRepos, getSkills } from '@/lib/api';
+import type { Work, Skill } from '@/types';
 import type { GitHubRepo } from '@/lib/api';
 import Link from 'next/link';
-
-const TECH_STACK = ['TypeScript', 'React', 'Next.js', 'Node.js', 'Express', 'MongoDB', 'WebGL'];
+import SkillSection from '@/components/SkillSection';
 
 export default function HomePage() {
   const [works, setWorks] = useState<Work[]>([]);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
 
   useEffect(() => {
     getWorks().then((data) => setWorks(data.slice(0, 3)));
+    getSkills().then(setSkills).catch(() => {});
     getGitHubRepos()
       .then((data) => setRepos(data.slice(0, 6)))
       .catch(() => {/* トークン未設定時はスキップ */});
@@ -30,13 +31,11 @@ export default function HomePage() {
       {/* 技術スタック */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-gray-900 mb-3">技術スタック</h2>
-        <div className="flex flex-wrap gap-2">
-          {TECH_STACK.map((tech) => (
-            <span key={tech} className="bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">
-              {tech}
-            </span>
-          ))}
-        </div>
+        {skills.length === 0 ? (
+          <p className="text-gray-400 text-sm">スキルデータがまだありません</p>
+        ) : (
+          <SkillSection skills={skills} />
+        )}
       </section>
 
       {/* 制作物（最大3件） */}
