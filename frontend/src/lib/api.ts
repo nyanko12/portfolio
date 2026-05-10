@@ -102,3 +102,35 @@ export async function deleteWork(id: string): Promise<void> {
   });
   await handleResponse<unknown>(res);
 }
+
+// --- GitHub ---
+
+export type GitHubRepo = {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  html_url: string;
+  language: string | null;
+  stargazers_count: number;
+  updated_at: string;
+};
+
+export type GitHubCommit = {
+  sha: string;
+  commit: {
+    message: string;
+    author: { name: string; date: string };
+  };
+  html_url: string;
+};
+
+export async function getGitHubRepos(): Promise<GitHubRepo[]> {
+  const res = await fetch(`${BASE_URL}/github/repos`);
+  return handleResponse<GitHubRepo[]>(res);
+}
+
+export async function getGitHubCommits(repo: string): Promise<GitHubCommit[]> {
+  const res = await fetch(`${BASE_URL}/github/commits?repo=${encodeURIComponent(repo)}`);
+  return handleResponse<GitHubCommit[]>(res);
+}
