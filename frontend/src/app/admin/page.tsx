@@ -61,6 +61,13 @@ export default function AdminPage() {
           <h2 className="font-semibold text-gray-900 mb-1">スキル管理</h2>
           <p className="text-sm text-gray-500">スキルの編集・削除</p>
         </Link>
+        <Link
+          href="/admin/quiz"
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-400 transition-colors col-span-1 sm:col-span-2"
+        >
+          <h2 className="font-semibold text-gray-900 mb-1">ギーク道場</h2>
+          <p className="text-sm text-gray-500">AIクイズで技術力を鍛える</p>
+        </Link>
       </div>
     </div>
   );

@@ -2,7 +2,10 @@
  * 初期スキルデータ投入スクリプト
  * 使い方: node scripts/seed-skills.js
  */
-require('dotenv').config({ path: `${__dirname}/../.env` });
+// MONGODB_URI が未設定の場合のみローカル .env を読む（--env-file で上書き可能）
+if (!process.env.MONGODB_URI) {
+  require('dotenv').config({ path: `${__dirname}/../.env` });
+}
 
 const mongoose = require('mongoose');
 const Skill = require('../src/models/Skill');

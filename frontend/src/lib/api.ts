@@ -1,4 +1,4 @@
-import type { Log, LogInput, Work, WorkInput, Skill, SkillInput } from '@/types';
+import type { Log, LogInput, Work, WorkInput, Skill, SkillInput, Subject, QuizQuestion, QuizAnswer, GradeResult, QuizStats, QuizSessionSummary } from '@/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -171,4 +171,61 @@ export async function getGitHubRepos(): Promise<GitHubRepo[]> {
 export async function getGitHubCommits(repo: string): Promise<GitHubCommit[]> {
   const res = await fetch(`${BASE_URL}/github/commits?repo=${encodeURIComponent(repo)}`);
   return handleResponse<GitHubCommit[]>(res);
+}
+
+// --- ギーク道場 ---
+
+export async function getSubjects(): Promise<Subject[]> {
+  const res = await fetch(`${BASE_URL}/quiz/subjects`, { headers: authHeaders() });
+  const data = await handleResponse<{ subjects: Subject[] }>(res);
+  return data.subjects;
+}
+
+export async function generateQuiz(
+  level: number,
+  subjects: string[]
+): Promise<{ sessionId: string; questions: QuizQuestion[]; model: string }> {
+  const res = await fetch(`${BASE_URL}/quiz/generate`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ level, subjects }),
+  });
+  return handleResponse(res);
+}
+
+export async function gradeQuiz(
+  sessionId: string,
+  answers: QuizAnswer[]
+): Promise<{ results: GradeResult[]; score: number; total: number }> {
+  const res = await fetch(`${BASE_URL}/quiz/grade`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ sessionId, answers }),
+  });
+  return handleResponse(res);
+}
+
+export async function saveQuizSession(
+  sessionId: string,
+  answers: QuizAnswer[],
+  gradeResults: GradeResult[]
+): Promise<{ sessionId: string; nextLevel: number }> {
+  const res = await fetch(`${BASE_URL}/quiz/sessions`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ sessionId, answers, gradeResults }),
+  });
+  return handleResponse(res);
+}
+
+export async function getQuizStats(): Promise<QuizStats> {
+  const res = await fetch(`${BASE_URL}/quiz/stats`, { headers: authHeaders() });
+  return handleResponse(res);
+}
+
+export async function getQuizSessions(limit = 20, subject?: string): Promise<{ sessions: QuizSessionSummary[] }> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (subject) params.set('subject', subject);
+  const res = await fetch(`${BASE_URL}/quiz/sessions?${params}`, { headers: authHeaders() });
+  return handleResponse(res);
 }

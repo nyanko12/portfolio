@@ -39,3 +39,48 @@ export type Work = {
 
 export type LogInput = Omit<Log, '_id' | 'createdAt' | 'updatedAt'>;
 export type WorkInput = Omit<Work, '_id' | 'createdAt' | 'updatedAt'>;
+
+// --- ギーク道場 ---
+
+export type Subject = {
+  name: string;
+  description: string;
+};
+
+export type QuizQuestion = {
+  id: number;
+  type: 'choice' | 'text';
+  subject: string;
+  text: string;
+  options?: string[];
+};
+
+export type QuizAnswer = {
+  id: number;
+  userAnswer: string;
+};
+
+export type GradeResult = {
+  id: number;
+  correct: boolean;
+  score: number;
+  feedback: string | null;
+};
+
+export type QuizStats = {
+  totalAnswered: number;
+  totalCorrect: number;
+  correctRate: number;
+  currentLevel: number;
+  streak: number;
+  lastPlayedDate: string | null;
+};
+
+export type QuizSessionSummary = {
+  _id: string;
+  playedAt: string;
+  level: number;
+  subjects: string[];
+  score: number;
+  total: number;
+};

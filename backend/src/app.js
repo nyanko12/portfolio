@@ -6,6 +6,7 @@ const logsRoutes = require('./routes/logs');
 const worksRoutes = require('./routes/works');
 const githubRoutes = require('./routes/github');
 const skillsRoutes = require('./routes/skills');
+const quizRoutes = require('./routes/quiz');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use('/logs', logsRoutes);
 app.use('/works', worksRoutes);
 app.use('/github', githubRoutes);
 app.use('/skills', skillsRoutes);
+app.use('/quiz', quizRoutes);
 
 // グローバルエラーハンドラー
 app.use((err, req, res, next) => {
