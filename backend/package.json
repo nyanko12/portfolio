@@ -11,7 +11,9 @@
   "jest": {
     "testEnvironment": "node",
     "testTimeout": 30000,
-    "setupFiles": ["./tests/setup.js"]
+    "setupFiles": [
+      "./tests/setup.js"
+    ]
   },
   "keywords": [],
   "author": "",
@@ -24,7 +26,7 @@
     "@anthropic-ai/sdk": "^0.96.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
+    "dotenv": "^16.6.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2"
