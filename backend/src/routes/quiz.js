@@ -5,6 +5,7 @@ const Subject = require('../models/Subject');
 const GeneratedQuizSession = require('../models/GeneratedQuizSession');
 const QuizSession = require('../models/QuizSession');
 const QuizStats = require('../models/QuizStats');
+const Log = require('../models/Log');
 const { parseClaudeJson } = require('../lib/claude');
 
 // ジャンル一覧取得
@@ -213,6 +214,9 @@ router.post('/sessions', authMiddleware, async (req, res) => {
   const nextLevel = await calcNextLevel(stats.currentLevel);
   await QuizStats.findByIdAndUpdate(stats._id, { currentLevel: nextLevel });
 
+  // 学習ログを自動生成
+  await createQuizLog(quizSession, builtAnswers);
+
   res.json({ sessionId: quizSession._id, nextLevel });
 });
 
@@ -244,6 +248,29 @@ router.get('/sessions', authMiddleware, async (req, res) => {
   const sessions = await QuizSession.find(filter).sort({ playedAt: -1 }).limit(limit);
   res.json({ sessions });
 });
+
+// クイズ結果を学習ログとして自動保存
+async function createQuizLog(session, answers) {
+  const date = new Date().toISOString().slice(0, 10);
+  const roundedScore = Math.round(session.score);
+  const wrongAnswers = answers.filter((a) => !a.isCorrect);
+
+  let content = `【ギーク道場】${session.subjects.join('・')} Lv.${session.level} — ${roundedScore}/${session.total}点\n`;
+
+  if (wrongAnswers.length > 0) {
+    content += '\n間違えた問題:\n';
+    for (const a of wrongAnswers) {
+      content += `- ${a.questionText}`;
+      if (a.feedback) content += `\n  → ${a.feedback}`;
+      content += '\n';
+    }
+  } else {
+    content += '\n全問正解！';
+  }
+
+  const tags = ['ギーク道場', ...session.subjects];
+  await Log.create({ date, content, tags });
+}
 
 // 直近5セッションの平均正答率からレベルを調整
 async function calcNextLevel(currentLevel) {
