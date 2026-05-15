@@ -22,7 +22,7 @@ function PlayContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!isAuthenticated) { router.push('/login'); return; }
+    if (!isAuthenticated) { router.push('/login'); return; }  // isLoadingはSuspense内なので不要
     if (subjects.length === 0) { router.push('/admin/quiz'); return; }
 
     generateQuiz(level, subjects)

@@ -6,14 +6,14 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 
 export default function AdminPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push('/login');
-  }, [isAuthenticated, router]);
+    if (!isLoading && !isAuthenticated) router.push('/login');
+  }, [isAuthenticated, isLoading, router]);
 
-  if (!isAuthenticated) return null;
+  if (isLoading) return null;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">

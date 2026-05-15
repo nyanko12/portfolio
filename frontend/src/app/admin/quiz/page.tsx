@@ -7,7 +7,7 @@ import { getSubjects, getQuizStats } from '@/lib/api';
 import type { Subject, QuizStats } from '@/types';
 
 export default function QuizTopPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -18,11 +18,11 @@ export default function QuizTopPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!isAuthenticated) router.push('/login');
-  }, [isAuthenticated, router]);
+    if (!isLoading && !isAuthenticated) router.push('/login');
+  }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (isLoading || !isAuthenticated) return;
     Promise.all([getSubjects(), getQuizStats()])
       .then(([subs, st]) => {
         setSubjects(subs);
@@ -51,7 +51,7 @@ export default function QuizTopPage() {
     router.push(`/admin/quiz/play?${params}`);
   };
 
-  if (!isAuthenticated) return null;
+  if (isLoading) return null;
   if (loading) return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-500">読み込み中...</div>;
 
   return (

@@ -7,13 +7,14 @@ import { getQuizStats, getQuizSessions } from '@/lib/api';
 import type { QuizStats, QuizSessionSummary } from '@/types';
 
 export default function QuizStatsPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<QuizStats | null>(null);
   const [sessions, setSessions] = useState<QuizSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isAuthenticated) { router.push('/login'); return; }
     Promise.all([getQuizStats(), getQuizSessions(20)])
       .then(([st, { sessions: ss }]) => {
@@ -21,7 +22,7 @@ export default function QuizStatsPage() {
         setSessions(ss);
       })
       .finally(() => setLoading(false));
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   if (!isAuthenticated) return null;
   if (loading) return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-500">読み込み中...</div>;

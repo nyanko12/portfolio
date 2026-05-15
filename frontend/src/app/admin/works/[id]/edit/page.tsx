@@ -8,18 +8,16 @@ import { getWork, updateWork } from '@/lib/api';
 import type { Work, WorkInput } from '@/types';
 
 export default function EditWorkPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [work, setWork] = useState<Work | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
+    if (isLoading) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
     getWork(id).then(setWork).catch(() => router.push('/works'));
-  }, [isAuthenticated, id, router]);
+  }, [isAuthenticated, isLoading, id, router]);
 
   const handleSubmit = async (data: WorkInput) => {
     await updateWork(id, data);

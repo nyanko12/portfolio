@@ -8,19 +8,19 @@ import { createLog } from '@/lib/api';
 import type { LogInput } from '@/types';
 
 export default function NewLogPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push('/login');
-  }, [isAuthenticated, router]);
+    if (!isLoading && !isAuthenticated) router.push('/login');
+  }, [isAuthenticated, isLoading, router]);
 
   const handleSubmit = async (data: LogInput) => {
     await createLog(data);
     router.push('/logs');
   };
 
-  if (!isAuthenticated) return null;
+  if (isLoading) return null;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">

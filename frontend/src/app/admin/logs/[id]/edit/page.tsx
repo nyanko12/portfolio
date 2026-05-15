@@ -8,23 +8,21 @@ import { getLogs, updateLog } from '@/lib/api';
 import type { Log, LogInput } from '@/types';
 
 export default function EditLogPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [log, setLog] = useState<Log | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
+    if (isLoading) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
     // IDで直接取得するエンドポイントがないためリスト取得でフィルタ
     getLogs().then((logs) => {
       const found = logs.find((l) => l._id === id);
       if (!found) router.push('/logs');
       else setLog(found);
     });
-  }, [isAuthenticated, id, router]);
+  }, [isAuthenticated, isLoading, id, router]);
 
   const handleSubmit = async (data: LogInput) => {
     await updateLog(id, data);

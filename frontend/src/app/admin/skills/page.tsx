@@ -15,7 +15,7 @@ const LEVEL_LABEL: Record<SkillLevel, string> = {
 };
 
 export default function AdminSkillsPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,12 +28,10 @@ export default function AdminSkillsPage() {
   };
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
+    if (isLoading) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
     fetchSkills();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`「${name}」を削除しますか？`)) return;
@@ -41,7 +39,7 @@ export default function AdminSkillsPage() {
     fetchSkills();
   };
 
-  if (!isAuthenticated) return null;
+  if (isLoading) return null;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">

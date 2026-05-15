@@ -8,18 +8,16 @@ import { getSkill, updateSkill } from '@/lib/api';
 import type { Skill, SkillInput } from '@/types';
 
 export default function EditSkillPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [skill, setSkill] = useState<Skill | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
+    if (isLoading) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
     getSkill(id).then(setSkill).catch(() => router.push('/admin/skills'));
-  }, [isAuthenticated, id, router]);
+  }, [isAuthenticated, isLoading, id, router]);
 
   const handleSubmit = async (data: SkillInput) => {
     await updateSkill(id, data);

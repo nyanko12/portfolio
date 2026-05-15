@@ -15,16 +15,17 @@ type ResultData = {
 };
 
 export default function ResultPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<ResultData | null>(null);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isAuthenticated) { router.push('/login'); return; }
     const raw = sessionStorage.getItem('quizResult');
     if (!raw) { router.push('/admin/quiz'); return; }
     setData(JSON.parse(raw));
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   if (!isAuthenticated || !data) return null;
 

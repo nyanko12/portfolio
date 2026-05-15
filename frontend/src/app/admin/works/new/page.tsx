@@ -8,19 +8,19 @@ import { createWork } from '@/lib/api';
 import type { WorkInput } from '@/types';
 
 export default function NewWorkPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push('/login');
-  }, [isAuthenticated, router]);
+    if (!isLoading && !isAuthenticated) router.push('/login');
+  }, [isAuthenticated, isLoading, router]);
 
   const handleSubmit = async (data: WorkInput) => {
     await createWork(data);
     router.push('/works');
   };
 
-  if (!isAuthenticated) return null;
+  if (isLoading) return null;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
