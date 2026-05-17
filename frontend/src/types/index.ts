@@ -43,6 +43,7 @@ export type WorkInput = Omit<Work, '_id' | 'createdAt' | 'updatedAt'>;
 // --- ギーク道場 ---
 
 export type Subject = {
+  _id: string;
   name: string;
   description: string;
 };

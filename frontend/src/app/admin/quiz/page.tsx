@@ -2,8 +2,8 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { getSubjects, getQuizStats } from '@/lib/api';
+import { useEffect, useState, useRef, KeyboardEvent } from 'react';
+import { getSubjects, getQuizStats, createSubject, deleteSubject } from '@/lib/api';
 import type { Subject, QuizStats } from '@/types';
 
 export default function QuizTopPage() {
@@ -16,6 +16,16 @@ export default function QuizTopPage() {
   const [level, setLevel] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // 分野削除: 1回目のバックスペースで警告状態に
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  // 分野追加フォーム
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [adding, setAdding] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/login');
@@ -31,12 +41,51 @@ export default function QuizTopPage() {
       })
       .catch(() => setError('データの取得に失敗しました'))
       .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isLoading]);
 
   const toggleSubject = (name: string) => {
     setSelectedSubjects((prev) =>
       prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]
     );
+  };
+
+  // バックスペースキーで削除（1回目：警告、2回目：削除実行）
+  const handleTagKeyDown = (e: KeyboardEvent<HTMLButtonElement>, subject: Subject) => {
+    if (e.key !== 'Backspace') { setPendingDeleteId(null); return; }
+    e.preventDefault();
+    if (pendingDeleteId !== subject._id) {
+      setPendingDeleteId(subject._id);
+    } else {
+      handleDelete(subject);
+    }
+  };
+
+  const handleDelete = async (subject: Subject) => {
+    setPendingDeleteId(null);
+    await deleteSubject(subject._id);
+    setSubjects((prev) => prev.filter((s) => s._id !== subject._id));
+    setSelectedSubjects((prev) => prev.filter((s) => s !== subject.name));
+  };
+
+  const handleAddSubmit = async () => {
+    if (!newName.trim()) return;
+    setAdding(true);
+    try {
+      const created = await createSubject(newName.trim(), newDesc.trim());
+      setSubjects((prev) => [...prev, created]);
+      setNewName('');
+      setNewDesc('');
+      setShowAddForm(false);
+    } catch {
+      setError('分野の追加に失敗しました');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const openAddForm = () => {
+    setShowAddForm(true);
+    setTimeout(() => nameInputRef.current?.focus(), 50);
   };
 
   const handleStart = () => {
@@ -76,22 +125,83 @@ export default function QuizTopPage() {
       )}
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h2 className="font-semibold text-gray-900 mb-4">分野を選択</h2>
-        <div className="flex flex-wrap gap-2">
-          {subjects.map((s) => (
-            <button
-              key={s.name}
-              onClick={() => toggleSubject(s.name)}
-              className={`px-4 py-2 rounded-full text-sm border transition-colors ${
-                selectedSubjects.includes(s.name)
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
-              }`}
-            >
-              {s.name}
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-900">分野を選択</h2>
+          <button
+            onClick={openAddForm}
+            className="text-xs text-gray-500 border border-gray-300 rounded px-2 py-1 hover:border-gray-500 hover:text-gray-700 transition-colors"
+          >
+            + 追加
+          </button>
         </div>
+
+        {/* 追加フォーム */}
+        {showAddForm && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubmit(); if (e.key === 'Escape') setShowAddForm(false); }}
+              placeholder="分野名（例: クラウド）"
+              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm mb-2 focus:outline-none focus:border-gray-500"
+            />
+            <input
+              type="text"
+              value={newDesc}
+              onChange={(e) => setNewDesc(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubmit(); if (e.key === 'Escape') setShowAddForm(false); }}
+              placeholder="説明（任意）"
+              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm mb-3 focus:outline-none focus:border-gray-500"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleAddSubmit}
+                disabled={!newName.trim() || adding}
+                className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded disabled:opacity-40 hover:bg-gray-700 transition-colors"
+              >
+                {adding ? '追加中...' : '追加'}
+              </button>
+              <button
+                onClick={() => { setShowAddForm(false); setNewName(''); setNewDesc(''); }}
+                className="text-xs text-gray-500 px-3 py-1.5 rounded hover:text-gray-700"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {subjects.map((s) => {
+            const isPending = pendingDeleteId === s._id;
+            const isSelected = selectedSubjects.includes(s.name);
+            return (
+              <button
+                key={s._id}
+                onClick={() => { setPendingDeleteId(null); toggleSubject(s.name); }}
+                onKeyDown={(e) => handleTagKeyDown(e, s)}
+                onBlur={() => { if (pendingDeleteId === s._id) setPendingDeleteId(null); }}
+                className={`px-4 py-2 rounded-full text-sm border transition-colors focus:outline-none ${
+                  isPending
+                    ? 'bg-red-50 text-red-600 border-red-400 ring-1 ring-red-400'
+                    : isSelected
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
+                }`}
+              >
+                {isPending ? `⚠ ${s.name}（もう一度で削除）` : s.name}
+              </button>
+            );
+          })}
+          {subjects.length === 0 && (
+            <p className="text-sm text-gray-400">分野がありません。「+ 追加」から追加してください。</p>
+          )}
+        </div>
+        {pendingDeleteId && (
+          <p className="text-xs text-red-500 mt-2">Backspace をもう一度押すと削除されます。他のキーでキャンセル。</p>
+        )}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">

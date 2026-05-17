@@ -8,10 +8,26 @@ const QuizStats = require('../models/QuizStats');
 const Log = require('../models/Log');
 const { parseClaudeJson } = require('../lib/claude');
 
-// ジャンル一覧取得
+// ジャンル一覧取得（_idも含めて返す）
 router.get('/subjects', authMiddleware, async (req, res) => {
   const subjects = await Subject.find({ enabled: true }).sort({ order: 1 });
-  res.json({ subjects: subjects.map((s) => ({ name: s.name, description: s.description })) });
+  res.json({ subjects: subjects.map((s) => ({ _id: s._id, name: s.name, description: s.description })) });
+});
+
+// ジャンル作成
+router.post('/subjects', authMiddleware, async (req, res) => {
+  const { name, description } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ message: 'nameは必須です' });
+  }
+  const subject = await Subject.create({ name: name.trim(), description: description?.trim() ?? '', enabled: true, order: 0 });
+  res.status(201).json({ _id: subject._id, name: subject.name, description: subject.description });
+});
+
+// ジャンル削除
+router.delete('/subjects/:id', authMiddleware, async (req, res) => {
+  await Subject.findByIdAndDelete(req.params.id);
+  res.json({ message: '削除しました' });
 });
 
 // 問題生成

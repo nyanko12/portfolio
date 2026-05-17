@@ -181,6 +181,23 @@ export async function getSubjects(): Promise<Subject[]> {
   return data.subjects;
 }
 
+export async function createSubject(name: string, description: string): Promise<Subject> {
+  const res = await fetch(`${BASE_URL}/quiz/subjects`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ name, description }),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteSubject(id: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/quiz/subjects/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  await handleResponse<unknown>(res);
+}
+
 export async function generateQuiz(
   level: number,
   subjects: string[]
