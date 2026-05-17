@@ -68,7 +68,18 @@ export default function ResultPage() {
                 <span className="text-xs text-gray-400">Q{idx + 1} · {q.subject}</span>
               </div>
               <p className="text-sm text-gray-800 mb-2 leading-relaxed">{q.text}</p>
-              <p className="text-xs text-gray-500">あなたの回答: <span className="text-gray-800">{userAns}</span></p>
+              {!isCorrect && q.type === 'choice' ? (
+                <div className="text-xs space-y-1 mt-2">
+                  <p className="text-red-600">
+                    あなたの回答: <span className="font-medium">{result?.userAnswerText ?? userAns}</span>
+                  </p>
+                  <p className="text-green-700">
+                    正解: <span className="font-medium">{result?.correctAnswerText ?? '—'}</span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 mt-2">あなたの回答: <span className="text-gray-800">{userAns}</span></p>
+              )}
               {result?.feedback && (
                 <p className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded">{result.feedback}</p>
               )}

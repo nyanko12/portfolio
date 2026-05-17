@@ -119,7 +119,17 @@ router.post('/grade', authMiddleware, async (req, res) => {
 
     if (question.type === 'choice') {
       const isCorrect = ans.userAnswer === question.answer;
-      results.push({ id: ans.id, correct: isCorrect, score: isCorrect ? 1 : 0, feedback: null });
+      // 選択肢テキストを抽出（"A. 〜" 形式から先頭の記号で照合）
+      const findOptionText = (letter) =>
+        question.options?.find((o) => o.startsWith(letter + '.') || o.startsWith(letter + '：') || o.startsWith(letter + ':')) ?? letter;
+      results.push({
+        id: ans.id,
+        correct: isCorrect,
+        score: isCorrect ? 1 : 0,
+        feedback: null,
+        userAnswerText: findOptionText(ans.userAnswer),
+        correctAnswerText: findOptionText(question.answer),
+      });
     } else {
       textAnswers.push({ id: ans.id, question: question.text, userAnswer: ans.userAnswer, correctAnswer: question.answer, keywords: question.keywords });
     }
@@ -231,7 +241,7 @@ router.post('/sessions', authMiddleware, async (req, res) => {
   await QuizStats.findByIdAndUpdate(stats._id, { currentLevel: nextLevel });
 
   // 学習ログを自動生成
-  await createQuizLog(quizSession, builtAnswers);
+  await createQuizLog(quizSession, builtAnswers, generated);
 
   res.json({ sessionId: quizSession._id, nextLevel });
 });
@@ -266,7 +276,7 @@ router.get('/sessions', authMiddleware, async (req, res) => {
 });
 
 // クイズ結果を学習ログとして自動保存
-async function createQuizLog(session, answers) {
+async function createQuizLog(session, answers, generated) {
   const date = new Date().toISOString().slice(0, 10);
   const roundedScore = Math.round(session.score);
   const wrongAnswers = answers.filter((a) => !a.isCorrect);
@@ -276,9 +286,19 @@ async function createQuizLog(session, answers) {
   if (wrongAnswers.length > 0) {
     content += '\n間違えた問題:\n';
     for (const a of wrongAnswers) {
-      content += `- ${a.questionText}`;
-      if (a.feedback) content += `\n  → ${a.feedback}`;
-      content += '\n';
+      content += `- ${a.questionText}\n`;
+      if (a.questionType === 'choice') {
+        // 選択肢の全文を generated セッションから取得
+        const genQ = generated?.questions?.find((q) => q.id === a.questionId);
+        const findOption = (letter) =>
+          genQ?.options?.find((o) => o.startsWith(letter + '.') || o.startsWith(letter + '：') || o.startsWith(letter + ':')) ?? letter;
+        content += `  あなた: ${findOption(a.userAnswer)}\n`;
+        content += `  正解:   ${findOption(a.correctAnswer)}\n`;
+      } else {
+        content += `  あなた: ${a.userAnswer}\n`;
+        content += `  正解:   ${a.correctAnswer}\n`;
+      }
+      if (a.feedback) content += `  → ${a.feedback}\n`;
     }
   } else {
     content += '\n全問正解！';

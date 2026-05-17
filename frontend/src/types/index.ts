@@ -66,6 +66,8 @@ export type GradeResult = {
   correct: boolean;
   score: number;
   feedback: string | null;
+  userAnswerText?: string;
+  correctAnswerText?: string;
 };
 
 export type QuizStats = {
