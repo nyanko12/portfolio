@@ -14,8 +14,10 @@ async function syncDateToGitHub(date) {
     } else {
       await upsertLogFile(date, logsForDate);
     }
+    return null;
   } catch (err) {
     console.error('GitHub同期エラー:', err.message);
+    return err.message;
   }
 }
 
@@ -38,8 +40,8 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 
   const log = await Log.create({ date, content, tags: tags ?? [] });
-  await syncDateToGitHub(date);
-  res.status(201).json(log);
+  const githubError = await syncDateToGitHub(date);
+  res.status(201).json({ ...log.toObject(), _githubError: githubError });
 });
 
 // 更新（認証必須）
