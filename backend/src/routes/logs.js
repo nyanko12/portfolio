@@ -1,8 +1,23 @@
 const express = require('express');
 const Log = require('../models/Log');
 const authMiddleware = require('../middleware/auth');
+const { upsertLogFile, deleteLogFile } = require('../lib/github');
 
 const router = express.Router();
+
+// 指定日付の全ログをGitHubにコミット（エラーが起きてもメイン処理は続行）
+async function syncDateToGitHub(date) {
+  try {
+    const logsForDate = await Log.find({ date }).sort({ createdAt: 1 });
+    if (logsForDate.length === 0) {
+      await deleteLogFile(date);
+    } else {
+      await upsertLogFile(date, logsForDate);
+    }
+  } catch (err) {
+    console.error('GitHub同期エラー:', err.message);
+  }
+}
 
 // 一覧取得（公開）
 router.get('/', async (req, res) => {
@@ -23,6 +38,7 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 
   const log = await Log.create({ date, content, tags: tags ?? [] });
+  await syncDateToGitHub(date);
   res.status(201).json(log);
 });
 
@@ -32,6 +48,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
   if (!log) {
     return res.status(404).json({ message: 'ログが見つかりません' });
   }
+  await syncDateToGitHub(log.date);
   res.json(log);
 });
 
@@ -41,6 +58,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   if (!log) {
     return res.status(404).json({ message: 'ログが見つかりません' });
   }
+  await syncDateToGitHub(log.date);
   res.json({ message: '削除しました' });
 });
 

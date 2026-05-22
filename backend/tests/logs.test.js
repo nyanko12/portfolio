@@ -4,6 +4,16 @@ const mongoose = require('mongoose');
 const app = require('../src/app');
 const User = require('../src/models/User');
 
+// GitHub API 呼び出しをモック（テスト環境では実際にコミットしない）
+jest.mock('../src/lib/github', () => ({
+  fetchRepos: jest.fn(),
+  fetchCommits: jest.fn(),
+  upsertLogFile: jest.fn().mockResolvedValue(undefined),
+  deleteLogFile: jest.fn().mockResolvedValue(undefined),
+}));
+
+const githubLib = require('../src/lib/github');
+
 let mongoServer;
 let token;
 
@@ -24,6 +34,10 @@ afterAll(async () => {
 });
 
 describe('POST /logs', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('認証済みでログを登録できる', async () => {
     const res = await request(app)
       .post('/logs')
@@ -33,6 +47,18 @@ describe('POST /logs', () => {
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('_id');
     expect(res.body.content).toBe('Expressを学んだ');
+  });
+
+  test('ログ登録時にGitHubへのコミットが呼ばれる', async () => {
+    await request(app)
+      .post('/logs')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ date: '2026-05-10', content: 'GitHubコミットテスト', tags: [] });
+
+    expect(githubLib.upsertLogFile).toHaveBeenCalledWith(
+      '2026-05-10',
+      expect.any(Array)
+    );
   });
 
   test('未認証で401を返す', async () => {
@@ -82,6 +108,10 @@ describe('PUT /logs/:id', () => {
     logId = res.body._id;
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('認証済みでログを更新できる', async () => {
     const res = await request(app)
       .put(`/logs/${logId}`)
@@ -90,6 +120,18 @@ describe('PUT /logs/:id', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.content).toBe('更新後');
+  });
+
+  test('ログ更新時にGitHubへのコミットが呼ばれる', async () => {
+    await request(app)
+      .put(`/logs/${logId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ content: 'GitHub更新テスト' });
+
+    expect(githubLib.upsertLogFile).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Array)
+    );
   });
 
   test('存在しないIDで404を返す', async () => {
@@ -113,12 +155,36 @@ describe('DELETE /logs/:id', () => {
     logId = res.body._id;
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('認証済みでログを削除できる', async () => {
     const res = await request(app)
       .delete(`/logs/${logId}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
+  });
+
+  test('ログ削除時にGitHub操作が呼ばれる', async () => {
+    const createRes = await request(app)
+      .post('/logs')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ date: '2026-05-20', content: 'GitHub削除テスト', tags: [] });
+    const targetId = createRes.body._id;
+
+    jest.clearAllMocks();
+
+    await request(app)
+      .delete(`/logs/${targetId}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    // 残ログなしの場合は deleteLogFile、ありの場合は upsertLogFile が呼ばれる
+    const called =
+      githubLib.deleteLogFile.mock.calls.length > 0 ||
+      githubLib.upsertLogFile.mock.calls.length > 0;
+    expect(called).toBe(true);
   });
 
   test('存在しないIDで404を返す', async () => {
