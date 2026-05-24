@@ -5,6 +5,8 @@ const app = require('../src/app');
 jest.mock('../src/lib/github', () => ({
   fetchRepos: jest.fn(),
   fetchCommits: jest.fn(),
+  upsertLogFile: jest.fn().mockResolvedValue(undefined),
+  deleteLogFile: jest.fn().mockResolvedValue(undefined),
 }));
 
 const { fetchRepos, fetchCommits } = require('../src/lib/github');

@@ -7,6 +7,7 @@ const QuizSession = require('../models/QuizSession');
 const QuizStats = require('../models/QuizStats');
 const Log = require('../models/Log');
 const { parseClaudeJson } = require('../lib/claude');
+const { upsertLogFile } = require('../lib/github');
 
 // ジャンル一覧取得（_idも含めて返す）
 router.get('/subjects', authMiddleware, async (req, res) => {
@@ -310,6 +311,14 @@ async function createQuizLog(session, answers, generated) {
 
   const tags = ['ギーク道場', ...session.subjects];
   await Log.create({ date, content, tags });
+
+  // クイズ生成ログもGitHubに同期
+  try {
+    const logsForDate = await Log.find({ date }).sort({ createdAt: 1 });
+    await upsertLogFile(date, logsForDate);
+  } catch (err) {
+    console.error('GitHub同期エラー:', err.message);
+  }
 }
 
 // 直近5セッションの平均正答率からレベルを調整
