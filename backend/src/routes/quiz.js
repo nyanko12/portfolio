@@ -219,6 +219,15 @@ router.post('/sessions', authMiddleware, async (req, res) => {
 
   // 統計更新（常に1ドキュメント保証）
   const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  // 更新前の値でstreak計算（更新後だと lastPlayedDate が today に変わって比較できない）
+  const existing = await QuizStats.findOne();
+  const newStreak =
+    existing?.lastPlayedDate === today ? existing.streak :      // 同日は維持
+    existing?.lastPlayedDate === yesterday ? existing.streak + 1 : // 昨日ならインクリメント
+    1;                                                            // それ以外はリセット
+
   const stats = await QuizStats.findOneAndUpdate(
     {},
     {
@@ -226,17 +235,12 @@ router.post('/sessions', authMiddleware, async (req, res) => {
         totalAnswered: answers.length,
         totalCorrect: Math.round(totalScore),
       },
-      $set: { lastPlayedDate: today },
+      $set: { lastPlayedDate: today, streak: newStreak },
     },
     { upsert: true, new: true }
   );
 
-  // 連続日数の更新
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const newStreak = stats.lastPlayedDate === yesterday ? stats.streak + 1 : 1;
-  await QuizStats.findByIdAndUpdate(stats._id, { streak: newStreak });
-
-  // 難易度自動調整
+  // 難易度自動調整（streakはfindOneAndUpdateで同時に更新済み）
   const nextLevel = await calcNextLevel(stats.currentLevel);
   await QuizStats.findByIdAndUpdate(stats._id, { currentLevel: nextLevel });
 
